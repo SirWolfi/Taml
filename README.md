@@ -4,22 +4,22 @@ A markdown language for simple text adventurers
 ## How to install
 Execute this in your shell to install:
 ```
-git clone https://github.com/SirWolfi/TextAdventurerMarkdown/
+git clone https://github.com/SirWolfi/Taml/
 ```
-now to build it use:
+To build it:
 ```
 cd TextAdventurerMarkdown
-g++ main.cpp -o TextAdventurerMarkdown.[exe/x84_64]
+g++ Taml.cpp -o Taml.[exe/x84_64]
 ```
-After that you can run it with
+And to run it
 ```
-TextAdventurerMarkdown.[exe/x84_64] <file.tam>
+Taml.[exe/x84_64] <file.tam>
 ```
 
 ## Syntax
 
 ### Questions and Answers
-Every .tam file is like a questionary <br>
+Every .taml file is like a questionary <br>
 You can declare a question like this:
 ```
 [Question Name]
