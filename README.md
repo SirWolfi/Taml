@@ -1,5 +1,5 @@
 # TextAdventureMarkdownLanguage (Taml)
-A markdown language for simple text adventurers
+A markdown language for simple text adventures
 
 ## How to install
 Execute this in your shell to install:
