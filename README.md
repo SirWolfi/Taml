@@ -1,4 +1,4 @@
-# TextAdventurerMarkdown
+# TextAdventureMarkdownLanguage (Taml)
 A markdown language for simple text adventurers
 
 ## How to install
