@@ -1,0 +1,145 @@
+[DEMO]
+<var tspeed is 100>
+<textspeed $tspeed>
+<var has_axe is false>
+<var has_key is false>
+<var chest_open is false>
+<var picture_empty is false>
+<var name is null>
+<var strenght is null>
+<clear>
+Hello
+<sleep 2000>
+<clear>
+What shall your name be:
+<input -> name>
+<sleep 2000>
+<clear>
+What a beatiful name... $name
+<sleep 2000>
+<clear>
+What shall your strenght be:
+{Muscle} CH_MUSCLE
+{Mind} CH_MIND
+{Kindness} CH_KINDNESS
+
+
+[CH_MUSCLE]
+<var strenght is Muscle>
+{<>} INIT2
+
+[CH_MIND]
+<var strenght is Mind>
+{<>} INIT2
+
+[CH_KINDNESS]
+<var strenght is Kindness>
+{<>} INIT2
+
+
+[INIT2]
+<sleep 2000>
+<clear>
+So $strenght it is.
+<sleep 2000>
+<clear>
+You find yourself in a room.
+<var first_time_dialog is true>
+{<>} FIRST_STEP
+
+[FIRST_STEP]
+<if ($first_time_dialog == false) <textspeed 0>>
+<if ($first_time_dialog == false) <clear>>
+There is a door, a chest and a strange looking picture.
+What do you do?
+<textspeed $tspeed>
+<var first_time_dialog is false>
+{Door} CH_DOOR
+{Chest} CH_CHEST
+{Picture} CH_PICTURE
+
+
+[CH_DOOR]
+<clear>
+<if ($has_axe == false) <jump DOOR_HAS_NO_AXE>>
+<else <jump DOOR_HAS_AXE>>
+{<>}
+
+[DOOR_HAS_AXE]
+The door is very massive.
+Use the axe?
+{Yes} DOOR_BREAK
+{Not yet} FIRST_STEP
+
+[DOOR_HAS_NO_AXE]
+The door is very massive.
+You would need a axe of some kind to break through . . .
+{Go Back} FIRST_STEP
+
+[DOOR_BREAK]
+<clear>
+You did it $name!
+The door is open, now you are free again!
+<sleep 2000>
+{<>} EXIT
+
+[CH_CHEST]
+<clear>
+<if ($chest_open == true) <jump CHEST_ALREADY_OPEN>>
+<if ($has_key == false) <jump CHEST_HAS_NO_KEY>>
+<else <jump CHEST_HAS_KEY>>
+{<>}
+
+[CHEST_HAS_KEY]
+It seems locked . . .
+Use the key?
+{Yes} CHEST_OPEN
+{Not yet} FIRST_STEP
+
+[CHEST_HAS_NO_KEY]
+It seems locked . . .
+You would need a key to open it . . .
+{Go Back} FIRST_STEP
+
+[CHEST_OPEN]
+The chest is open!
+You find an old axe in it. Maybe this can be usefull later!
+<var has_key is false>
+<var has_axe is true>
+<var chest_open is true>
+{Go Back} FIRST_STEP
+
+[CHEST_ALREADY_OPEN]
+Nothing to see here anymore...
+{Go Back} FIRST_STEP
+
+[CH_PICTURE]
+<clear>
+<if ($picture_empty == true) <jump PICTURE_EMPTY>>
+You look at the picture.
+It's the picture of an old lady...
+But something is odd. You take a look at its back and . . .
+<sleep 1000>
+Find a key!
+<sleep 1000>
+Take it?
+{Yes} PICTURE_GET_KEY
+{No} PICTURE_IGNORE_KEY
+
+[PICTURE_IGNORE_KEY]
+You let the key be and move on . . .
+{<>} FIRST_STEP
+
+[PICTURE_GET_KEY]
+You take the key!
+<var has_key is true>
+<var picture_empty is true>
+{Go Back} FIRST_STEP
+
+[PICTURE_EMPTY]
+Nothing to see here anymore...
+{Go Back} FIRST_STEP
+
+
+[EXIT]
+{<>}

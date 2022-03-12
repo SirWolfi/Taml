@@ -1,0 +1,23 @@
+[A]
+This is file A!
+<var back is A::END>
+{<>} A::QUESTION_1
+
+# include
+%examples/including/b.taml
+
+[A::QUESTION_1]
+Called A!
+{<>} B::QUESTION_1
+
+[A::END]
+A is finished!
+{<>}
+
+
+# If executed a.taml, this will output:
+
+# This is file A!
+# Called A!
+# Called B!
+# A is finished!

@@ -5,28 +5,44 @@
 #include <cstring>
 #include <vector>
 #include <map>
+#include <stdio.h>
+#include <filesystem>
+#include <chrono>
 
 #ifdef _WIN32
+#define OS_ "Windows"
 #include <windows.h>
 
-void sleep(int milliseconds) {
+void tsleep(int milliseconds) {
 	Sleep(milliseconds);
 }
 
 void clear() {
 	system("cls");
 }
-
 #elif defined(__linux__)
-#include <unistd.h>
+//#include <unistd.h>
+#define OS_ "Linux"
+#include <thread>
 
-/*
-void sleep(int milliseconds) {
-	sleep(milliseconds);
-}*/
+void tsleep(int milliseconds) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
 
 void clear() {
 	system("clear");
+}
+#else
+#define OS_ "Unknown"
+
+
+void tsleep(int milliseconds) {
+
+
+
+void clear() {
+
 }
 #endif
 
@@ -124,6 +140,9 @@ struct Question {
 namespace Global {
 	std::map<std::string,std::string> vars;
 	bool last_if_result = true;
+	Question current;
+	std::vector<Question> questions;
+	int text_speed = 0;
 }
 
 std::string getInput() {
@@ -132,14 +151,19 @@ std::string getInput() {
 	return inp;
 }
 
-std::vector<std::string> splitBySpaces(std::string str) {
+std::vector<std::string> splitBySpaces(std::string str, bool nline = false, bool keep = false) {
 	std::vector<std::string> ret;
 	std::string tmp;
 
 	for(size_t i = 0; i < str.size(); ++i) {
-		if(str[i] == ' ') {
+		if(str[i] == ' ' || str[i] == '\t' || (str[i] == '\n' && nline)) {
 			if(tmp != "") {
-				ret.push_back(tmp);
+				if(keep) {
+					ret.push_back(tmp + str[i]);
+				}
+				else {
+					ret.push_back(tmp);
+				}
 			}
 			tmp = "";
 		}
@@ -165,12 +189,129 @@ std::string checkVar(std::string str) {
 	return str;
 }
 
-void handleSystemCommand(std::string str, size_t line) {
+std::map<std::string,std::string> fromSaveFile(std::string file) {
+	auto lines = intoLines(read(file));
+	for(auto l : lines) {
+		std::cout << "l:" << l << "\n";
+	}
+	std::map<std::string,std::string> ret;
+	for(auto i : lines) {
+		auto tokens = splitBySpaces(i,true,false);
+		
+		for(auto j : tokens) {
+			std::cout << "i:" << i << "\n";
+		}
+
+		if(tokens.size() == 0) {
+			continue;
+		}
+
+		if(tokens.size() < 2) {
+			std::cout << "Error, corrupted save file \"" << file << "\" was tried to be loaded!\n";
+			std::exit(0);
+		}
+		
+
+		std::string val;
+
+		for(size_t j = 1; j < tokens.size(); ++j) {
+			val += tokens[j];
+		}
+		ret[tokens[0]] = val;
+	}
+
+	return ret;
+} 
+
+void mapToSaveFile(std::string file, std::map<std::string,std::string> map) {
+	std::fstream fs;
+	fs.open(file,std::ios::trunc | std::ios::binary | std::ios::app | std::ios::ate);
+	std::string val;
+	for(auto i : map) {
+		val += i.first + " " + i.second + "\n";
+	}
+	std::cout << "\"" << val << "\"\n";
+	fs << val;
+	std::cout << "->\"" << read(file) << "\"\n";
+	fs.close();
+}
+
+void intoSaveFile(std::string file, std::string key, std::string value) {
+	auto map = fromSaveFile(file);
+
+	map[key] = value;
+	std::cout << "map:\n";
+	for(auto i : map) {
+		std::cout << "map[" << i.first << "] = " << i.second << "\n";
+	}
+	mapToSaveFile(file,map);
+}
+
+Question& find(std::string name) {
+	if(name == "") {
+		std::exit(0);
+	}
+	for(size_t i = 0; i < Global::questions.size(); ++i) {
+		if(Global::questions[i].name == name) {
+			return Global::questions[i];
+		}
+	}
+	std::cout << "Error, failed to find \"" << name << "\"\n";
+	std::exit(0);
+}
+
+bool isInt(std::string str) {
+	try {
+		std::stoi(str);
+	}
+	catch(...) {
+		return false;
+	}
+	return true;
+}
+
+char first_char(std::string str) {
+	if(str.size() == 0) {
+		return ' ';
+	}
+	int p = 0;
+	while(str[p] == ' ' || str[p] == '\t') {
+		++p;
+		if(p == str.size()) {
+			return ' ';
+		}
+	}
+	return str[p];
+}
+std::string rm_begin_end_spaces(std::string str) {
+	if(str.size() == 0) {
+		return str;
+	}
+	int p = 0;
+	while(str[p] == ' ' || str[p] == '\t') {
+		++p;
+		if(p == str.size()) {
+			return "";
+		}
+	}
+
+	str.erase(str.begin(),str.begin()+p); // remove spaces/tabs an the front
+
+	p = str.size()-1;
+	while(str[p] == ' ' || str[p] == '\t') {
+		str.pop_back(); // removes spaces/tabs on the back
+		p = str.size()-1;
+	}
+
+	return str;
+}
+
+bool handleSystemCommand(std::string str, size_t line) {
 	auto code = splitBySpaces(str);
 
 
 	if(code[0] == "empty") {
-		return;
+		return false;
 	}
 	else if(code[0] == "var") {
 		if(code.size() < 4) {
@@ -182,7 +323,7 @@ void handleSystemCommand(std::string str, size_t line) {
 			std::exit(0);
 		}
 		Global::vars[code[1]] = checkVar(code[3]);
-		return;
+		return false;
 	}
 	else if(code[0] == "input") {
 		if(code.size() < 3) {
@@ -196,9 +337,10 @@ void handleSystemCommand(std::string str, size_t line) {
 		std::cout << ":";
 		Global::vars[code[2]] = getInput();
 		
-		return;
+		return false;
 	}
 	else if(code[0] == "if") {
+		bool jmp = false;
 		if(code.size() < 3) {
 			std::cout << "Error, wrong args in line " << line << "\n";
 			std::exit(0);
@@ -235,11 +377,46 @@ void handleSystemCommand(std::string str, size_t line) {
 			std::string right = checkVar(tokens[2]);
 			std::string operat = checkVar(tokens[1]);
 
+			
 			if(operat == "==") {
-				check = left == right ? "true" : "false";
+				if(left == right)
+					check = "true";
+				else
+					check = "false";
 			}
 			else if(operat == "!=") {
-				check = left != right ? "true" : "false";
+				if(left != right)
+					check = "true";
+				else
+					check = "false";
+			}
+			else if(operat == ">") {
+				if(!isInt(left)) {
+					std::cout << "Error, integer operator on an string: \"" << left << "\" in line " << line << "\n";
+					std::exit(0);
+				}
+				if(!isInt(right)) {
+					std::cout << "Error, integer operator on an string: \"" << right << "\" in line " << line << "\n";
+					std::exit(0);
+				}
+				if(std::stoi(left) > std::stoi(right))
+					check = "true";
+				else
+					check = "false";
+			}
+			else if(operat == "<") {
+				if(!isInt(left)) {
+					std::cout << "Error, integer operator on an string: \"" << left << "\" in line " << line << "\n";
+					std::exit(0);
+				}
+				if(!isInt(right)) {
+					std::cout << "Error, integer operator on an string: \"" << right << "\" in line " << line << "\n";
+					std::exit(0);
+				}
+				if(std::stoi(left) < std::stoi(right))
+					check = "true";
+				else
+					check = "false";
 			}
 			else {
 				std::cout << "Error, unknown operator " << operat << " in line " << line << "\n";
@@ -266,7 +443,11 @@ void handleSystemCommand(std::string str, size_t line) {
 			cd.erase(cd.begin());
 
 			if(check == "true" || check == "TRUE" || check == "True" || check == "1") {
-				handleSystemCommand(cd,line);
+				jmp = handleSystemCommand(cd,line);
+				Global::last_if_result = true;
+			}
+			else {
+				Global::last_if_result = false;
 			}
 
 
@@ -276,7 +457,7 @@ void handleSystemCommand(std::string str, size_t line) {
 		}
 
 		
-		return;
+		return jmp;
 	}
 	else if(code[0] == "sleep") {
 		if(code.size() < 2) {
@@ -291,11 +472,11 @@ void handleSystemCommand(std::string str, size_t line) {
 			std::cout << "Error, not int given at sleep statement! Got \" " << v << "\" in line " << line << "\n";
 			std::exit(0);
 		}
-		sleep(std::stoi(v));
+		tsleep(std::stoi(v));
 
-		return;
+		return false;
 	}
-	else if(code[0] == "sleep") {
+	else if(code[0] == "clear") {
 		if(code.size() < 1) {
 			std::cout << "Error, wrong args in line " << line << "\n";
 			std::exit(0);
@@ -303,25 +484,115 @@ void handleSystemCommand(std::string str, size_t line) {
 			
 		clear();
 
-		return;
+		return false;
+	}
+	else if(code[0] == "else") {
+		if(code.size() < 2) {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+		if(code[1][0] != '<') {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+		std::string cd;
+		int pos = 1;
+		while(code[pos].back() != '>') {
+			cd += code[pos] + ' ';
+			if(pos+1 >= code.size()) {
+				std::cout << "Error, no closing \">\" in line " << line << "\n";
+				std::exit(0);
+			}
+			++pos;
+		}
+		cd += code[pos];
+		cd.pop_back();
+		cd.erase(cd.begin());
+		bool jmp = false;
+		if(!Global::last_if_result) {
+			jmp = handleSystemCommand(cd,line);
+		}
+		return jmp;
+	}
+	else if(code[0] == "save") {
+		if(code.size() < 6) {
+			std::cout << "Error, wrong args in line " << line << "\n"; // <save var as hello -> hi.tamlsave>
+			std::exit(0);
+		}
+		if(code[2] != "as" && code[2] != "=>") {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+		if(code[4] != "to" && code[4] != "->") {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+
+
+		std::string name = checkVar(code[1]);
+		std::string in_name = checkVar(code[3]);
+		std::string file = checkVar(code[5]);
+
+		if(!std::filesystem::exists(file)) {
+			std::ofstream os;
+			os.open(file, std::ios::trunc | std::ios::app);
+			os.close();
+		}
+
+		intoSaveFile(file,in_name,name);
+		return false;
+	}
+	else if(code[0] == "jump") {
+		if(code.size() < 2) {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+		std::string to_question = "";
+
+		for(size_t i = 1; i < code.size(); ++i) {
+			to_question = code[i] + " ";
+		}
+		to_question.pop_back();
+
+		Global::current = find(to_question);
+
+		return true;
+	}
+	else if(code[0] == "textspeed") {
+		if(code.size() < 2) {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+
+		try {
+			Global::text_speed = std::stoi(checkVar(code[1]));
+		}
+		catch(std::exception e) {
+			std::cout << "Error, not an int given as text speed!\n";
+			std::exit(0);
+		}
+		return false;
 	}
 	else {
 		std::cout << "Error, unknown command \"" << code[0] << "\" in line " << line << "\n";
+		std::exit(0);
 	}
 }
 
-std::vector<Question> questions;
+// std::vector<Question> questions; <- moved to Global namespace!
 
-void parse(std::string fileName) {
+std::vector<Question> parse(std::string fileName) {
+	std::vector<Question> ret;
 	bool inQuestion = false;
     std::string source = read(fileName);
 	source += "\n"; //savety
 	auto vec = intoLines(source);
 	Question qes;
 	for(size_t i = 0; i < vec.size(); ++i) {
-		if(vec[i][0] == '[') {
+		if(first_char(vec[i]) == '[') {
+			vec[i] = rm_begin_end_spaces(vec[i]);
 			if(qes.name != "") {
-				questions.push_back(qes);
+				ret.push_back(qes);
 			}
 			qes.clear();
 			for(size_t j = 1; vec[i][j] != ']'; ++j) {
@@ -334,7 +605,8 @@ void parse(std::string fileName) {
 			inQuestion = true;
 			continue;
 		}
-		else if(vec[i][0] == '{') {
+		else if(first_char(vec[i]) == '{') {
+			vec[i] = rm_begin_end_spaces(vec[i]);
 			if(!inQuestion) {
 				std::cout << "Error, found \"{\" outside of a question (line:" << i << ")\n";
 				std::exit(0);
@@ -382,39 +654,48 @@ void parse(std::string fileName) {
 
 			qes.answers.push_back(tmpAnswer);
 		}
+		else if(first_char(vec[i]) == '%') {
+			vec[i] = rm_begin_end_spaces(vec[i]);
+			std::string file = vec[i];
+			file.erase(file.begin());
+			if(!std::filesystem::exists(file)) {
+				std::cout << "Error, unknown file \"" << file << "\" to include in line " << i << "\n";
+				std::exit(0);
+			}
+
+			if(qes.name != "") {
+				ret.push_back(qes);
+			}
+			qes.clear();
+			inQuestion = false;
+
+			auto add = parse(file);
+			for(auto i : add) {
+				ret.push_back(i);
+			}
+		}
+		else if(first_char(vec[i]) == '#') {
+			; // comment!
+		}
 		else {
 			if(qes.name != "" && !inQuestion) {
-				std::cout << "Error, Unknown text in line " << i << "\n";
+				std::cout << "Error, unexpected text in line " << i << "\n";
 				std::exit(0);
 			}
 			qes.text += vec[i] + "\n";
 		}
-
 		if(i+1 >= vec.size() && qes.name != "") {
-			questions.push_back(qes);
+			ret.push_back(qes);
 		}
 	}
+
+	return ret;
 	
-}
-
-
-
-Question& find(std::string name) {
-	if(name == "") {
-		std::exit(0);
-	}
-	for(size_t i = 0; i < questions.size(); ++i) {
-		if(questions[i].name == name) {
-			return questions[i];
-		}
-	}
-	std::cout << "Error, failed to find \"" << name << "\"\n";
-	std::exit(0);
 }
 
 bool is_special_key(char ch) {
 	const char spk[] = {
-		' ', '\n', '+', '~', '*','#','\'','\\','!','"','^','#','-','_','.',';',':',',','<','>','|','/','%','&','(',')','[',']','{','}','`','?'
+		' ', '\n', '+', '~', '*','#','\'','\\','!','"','^','#','-',/*'_','.',*/';',/*':',*/',','<','>','|','/','%','&','(',')','[',']','{','}','`','?'
 	};
 
 	for(size_t i = 0; i < sizeof(spk); ++i) {
@@ -445,40 +726,71 @@ std::string replaceVars(std::string str) {
 			ret += str[i];
 		}
 	}
+	if(tmp != "" && beg != -1) {
+		ret += Global::vars[tmp];
+	}
 	return ret;
 }
 
+// Question current; <- moved to Global namespace!
 void run() {
-	Question current = questions[0];
+	Global::current = Global::questions[0];
 
 	for(;;) {
-		//std::cout << "[//" << current.name << "]\n";
 		std::string out;
 
-		auto split = intoLines(current.text);
+		//Yes, they are useless, yes i like them, yes they'll stay ;3
+		Global::vars["__TEXT_SPEED__"] = std::to_string(Global::text_speed);
+		Global::vars["__QUESTION__"] = Global::current.name;
+		Global::vars["__QUESTIONS__"] = Global::questions.size();
+		Global::vars["__START__"] = Global::questions.front().name;
+		Global::vars["__PATH__"] = std::filesystem::current_path().string();
+		Global::vars["__ROOT__"] = std::filesystem::current_path().root_directory();
+		Global::vars["__OS__"] = OS_;
+
+		auto split = intoLines(Global::current.text);
+		bool cont = false;
 		for(size_t i = 0; i < split.size(); ++i) {
 			std::string with = replaceVars(split[i]);
 			if(with[0] == '<' && with.back() == '>') {
 				with.erase(with.begin());
 				with.pop_back();
-				handleSystemCommand(with,i); // i is not the line but eh who cares about good error messages.... right?
+				bool result = handleSystemCommand(with,i); // i is not the line but eh who cares about good error messages.... right?
+				if(result) {
+					cont = true;
+					break;
+				}
 			}
 			else {
-				std::cout << with << "\n";
+				if(Global::text_speed == 0) {
+					std::cout << with << "\n";
+				}
+				else {
+					for(auto i : with) {
+						std::cout << i;
+						std::cout.flush();
+						tsleep(Global::text_speed);
+					}
+					std::cout << "\n";
+				}
 			}
-		}
 
-		if(current.jumpAfterExecute) {
-			current = find(current.jumpTo);
+		}
+		if(cont) {
+			cont = false;
 			continue;
 		}
-		else if(current.breakAfterExecute) {
-			//std::cout << "[quit]\n";
+
+		if(Global::current.jumpAfterExecute) {
+			Global::current = find(checkVar(Global::current.jumpTo));
+			continue;
+		}
+		else if(Global::current.breakAfterExecute) {
 			std::exit(0);
 		}
 
-		for(size_t i = 0; i < current.answers.size(); ++i) {
-			std::string o = replaceVars(current.answers[i].name);
+		for(size_t i = 0; i < Global::current.answers.size(); ++i) {
+			std::string o = replaceVars(Global::current.answers[i].name);
 			std::cout << "[" << i+1 << "] " << o << "\n";
 		}
 
@@ -491,12 +803,11 @@ void run() {
 			inp = "1";
 		}
 
-		if(inp == "" && std::stoi(inp) > current.answers.size()) {
-			//std::cout << "[again]\n";
+		if(inp == "" && std::stoi(inp) > Global::current.answers.size()) {
+			// something was here but I forgot, eh
 		}
 		else {
-			//std::cout << "[" << current.answers[std::stoi(inp)-1].jumpTo << "]\n";
-			current = find(current.answers[std::stoi(inp)-1].jumpTo);
+			Global::current = find(checkVar(Global::current.answers[std::stoi(inp)-1].jumpTo));
 		}
 	}
 }
@@ -506,6 +817,6 @@ int main(int argc, char** argv) {
 		std::cout << "A file must be given!\n";
 		return 1;
 	}
-	parse(std::string(argv[1]));
+	Global::questions = parse(std::string(argv[1]));
 	run();
 }

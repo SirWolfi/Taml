@@ -1,0 +1,21 @@
+[B]
+This is file B!
+<var back is B::END>
+{<>} B::QUESTION_1
+
+[B::QUESTION_1]
+Called B!
+    # jumps back!
+{<>} $back
+
+[B::END]
+B is finished!
+{<>}
+
+# If executed b.taml, this will output:
+
+# This is file B!
+# Called B!
+# B is finished!
+
+# Notice here: B doesn't use A's question because that's bad practise as said in the README.md!
