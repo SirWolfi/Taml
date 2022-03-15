@@ -1,4 +1,5 @@
 [DEMO]
+    # Setting up all the values
 <var tspeed is 100>
 <textspeed $tspeed>
 <var has_axe is false>
@@ -36,7 +37,7 @@ What shall your strenght be:
 <var strenght is Kindness>
 {<>} INIT2
 
-
+# Btw, INIT2 is a terrible name, but my creativity is dead at the moment
 [INIT2]
 <sleep 2000>
 <clear>
@@ -44,6 +45,7 @@ So $strenght it is.
 <sleep 2000>
 <clear>
 You find yourself in a room.
+    # Short variables are prefered, yet they should be understandable
 <var first_time_dialog is true>
 {<>} FIRST_STEP
 
@@ -58,7 +60,7 @@ What do you do?
 {Chest} CH_CHEST
 {Picture} CH_PICTURE
 
-
+# It's good to groub questions together when they are connected
 [CH_DOOR]
 <clear>
 <if ($has_axe == false) <jump DOOR_HAS_NO_AXE>>
@@ -73,7 +75,7 @@ Use the axe?
 
 [DOOR_HAS_NO_AXE]
 The door is very massive.
-You would need a axe of some kind to break through . . .
+You would need an axe of some kind to break through . . .
 {Go Back} FIRST_STEP
 
 [DOOR_BREAK]
@@ -140,6 +142,6 @@ You take the key!
 Nothing to see here anymore...
 {Go Back} FIRST_STEP
 
-
+# This is not needed, yet "{<>} EXIT" is better to understand then "{<>}" on it's own.
 [EXIT]
 {<>}

@@ -453,7 +453,7 @@ bool handleSystemCommand(std::string str, size_t line) {
 
 		}
 		else {
-			std::cout << "Error, no copund component for if statment in line " << line << "\n";
+			std::cout << "Error, no copound component for if statment in line " << line << "\n";
 		}
 
 		
