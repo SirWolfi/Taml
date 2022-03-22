@@ -54,7 +54,9 @@ Text
 ```
 When the user chooses `Answer1`, the interpreter jumps to `Question2` <br>
 When the user chooses `Answer2`, the interpreter jumps to `Question3` <br>
+
 _Node: Questions you can jump to can also be variables!_
+
 <br>
 There is no limit for questions and answers. <br>
 <br>
