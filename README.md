@@ -1,17 +1,17 @@
 # TextAdventureMarkdownLanguage (Taml)
-A markdown language for simple text adventures
+A markdown language for simple text adventures (v.1.1.0)
 
 ## How to install
 Execute this in your shell to install:
 ```
 git clone https://github.com/SirWolfi/Taml/
 ```
-To build it:
+To build it: (A make file might be added later)
 ```
 cd TextAdventurerMarkdown
-g++ Taml.cpp -o Taml.[exe/x86_64]
+g++ Taml.cpp InIpp/InI++/Inipp.cpp -o Taml.[exe/x86_64]
 ```
-And to run it
+And to run it:
 ```
 Taml.[exe/x86_64] <file.taml>
 ```
@@ -114,7 +114,7 @@ The syntax for `input` is
 Workflow helper.
 The syntax for `if` is
 ```
-<if (expr) <command>>
+<if (EXPR) <COMMAND>>
 ```
 When `expr` is "True","TRUE","true" or "1", `command` is beeing runned! <br> <br>
 An expression looks like:
@@ -129,7 +129,7 @@ Known operators are `==`, `!=`, `>` and `<`. <br>
 Executes if the last if failed.
 The syntax for `else` is
 ```
-<else <commands>>
+<else <COMMANDS>>
 ```
 When the last if failed, `commands` is beeing runned! <br>
 
@@ -153,7 +153,7 @@ Can also be a variable. <br>
 Jumps to a question. <br>
 The syntax for `jump` is
 ```
-<jump question>
+<jump QUESTION>
 ```
 `question` can have spaces, but as mentioned before, it's not recomended. <br>
 
@@ -165,6 +165,25 @@ The syntax for `textspeed` is
 ```
 The default textspeed if 0, that means no delay. <br>
 Once a char is printed, the interpeter waites for `milliseconds`. <br>
+
+#### 9.) save
+Saves variables in InI++ file format. <br>
+The syntax for `save` is
+```
+<save VARIABLE as KEY to FILE>
+```
+Any extention can be used for FILE, but `.tamlsave` is recomended! <br>
+The variable's value will be stored as `KEY` in `FILE`. <br>
+These keys will always be saved in the `[Tamlsave]` section!
+
+#### 10.) get
+Gets variables from an save file. <br>
+The syntax for `get` is
+```
+<get KEY from FILE to VARIABLE>
+```
+The value of `KEY` from the file `FILE` will be written into `VARIABLE`. <br>
+If it doesn't exist, `VARIABLE` is an empty string.
 
 ### Interpreter Variables
 Interpreter variables are variables which will be set new for each line interpetered. <br>

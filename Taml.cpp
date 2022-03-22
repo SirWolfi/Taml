@@ -9,21 +9,22 @@
 #include <filesystem>
 #include <chrono>
 
+#include "InIpp/InI++/Inipp.hpp"
+
 #ifdef _WIN32
 #define OS_ "Windows"
 #include <windows.h>
 
 void tsleep(int milliseconds) {
-	Sleep(milliseconds);
+	Sleep(milliseconds); // Windows users often have problems with std::thread so give them their API instead...
 }
 
 void clear() {
 	system("cls");
 }
 #elif defined(__linux__)
-//#include <unistd.h>
 #define OS_ "Linux"
-#include <thread>
+#include <thread> 
 
 void tsleep(int milliseconds) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
@@ -38,8 +39,8 @@ void clear() {
 
 
 void tsleep(int milliseconds) {
-
-
+	// Heh, hello mac/BSD/wtf users
+}
 
 void clear() {
 
@@ -523,7 +524,7 @@ bool handleSystemCommand(std::string str, size_t line) {
 			std::cout << "Error, wrong args in line " << line << "\n";
 			std::exit(0);
 		}
-		if(code[4] != "to" && code[4] != "->") {
+		if(code[4] != "to" && code[4] != "->" && code[4] != "in") {
 			std::cout << "Error, wrong args in line " << line << "\n";
 			std::exit(0);
 		}
@@ -539,7 +540,42 @@ bool handleSystemCommand(std::string str, size_t line) {
 			os.close();
 		}
 
-		intoSaveFile(file,in_name,name);
+		IniFile inf = IniFile::from_file(file);
+		if(!inf) {
+			if(inf.error_msg() != "Empty file\n") {
+				std::cout << inf.error_msg();
+				std::exit(0);
+			}
+		}
+		inf.set(in_name,IniHelper::to_element(Global::vars[name]),"Tamlsave");
+		inf.to_file(file);
+		return false;
+	}
+	else if(code[0] == "get") { // <get <key> from <file> to <var>>
+		if(code.size() < 6) {
+			std::cout << "Error, wrong args in line " << line << "\n"; // <save var as hello -> hi.tamlsave>
+			std::exit(0);
+		}
+		if(code[2] != "from" && code[2] != "<-") {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+		if(code[4] != "to" && code[4] != "=>" && code[4] != "as") {
+			std::cout << "Error, wrong args in line " << line << "\n";
+			std::exit(0);
+		}
+
+
+		std::string key = checkVar(code[1]);
+		std::string file = checkVar(code[3]);
+		std::string var = checkVar(code[5]);
+		IniFile inf = IniFile::from_file(file);
+		if(!inf) {
+			std::cout << inf.error_msg() << "\n";
+			std::exit(0);
+		}
+		Global::vars[var] = inf.get(key,"Tamlsave").to_string();
+		inf.to_file(file); // just in case
 		return false;
 	}
 	else if(code[0] == "jump") {

@@ -5,3 +5,7 @@ Taml.x86_64
 *.tamlsave
 .vscode/c_cpp_properties.json
 .vscode/settings.json
+CMakeLists.txt
+build
+CMakeFiles
+Makefile
