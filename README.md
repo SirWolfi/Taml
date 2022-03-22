@@ -9,7 +9,7 @@ git clone https://github.com/SirWolfi/Taml/
 To build it: (A make file might be added later)
 ```
 cd TextAdventurerMarkdown
-g++ Taml.cpp InIpp/InI++/Inipp.cpp -o Taml.[exe/x86_64]
+g++ Taml.cpp InI++/Inipp.cpp -o Taml.[exe/x86_64]
 ```
 And to run it:
 ```

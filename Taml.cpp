@@ -9,7 +9,8 @@
 #include <filesystem>
 #include <chrono>
 
-#include "InIpp/InI++/Inipp.hpp"
+#include "InI++/Inipp.hpp"
+
 
 #ifdef _WIN32
 #define OS_ "Windows"
