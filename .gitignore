@@ -9,3 +9,4 @@ CMakeLists.txt
 build
 CMakeFiles
 Makefile
+examples/test_project

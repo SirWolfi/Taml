@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <filesystem>
 #include <chrono>
+#include <stack>
+#include <optional>
 
 #include "InI++/Inipp.hpp"
 
@@ -15,6 +17,8 @@
 #ifdef _WIN32
 #define OS_ "Windows"
 #include <windows.h>
+
+#define DP "\\"
 
 void tsleep(int milliseconds) {
 	Sleep(milliseconds); // Windows users often have problems with std::thread so give them their API instead...
@@ -27,6 +31,8 @@ void clear() {
 #define OS_ "Linux"
 #include <thread> 
 
+#define DP "/"
+
 void tsleep(int milliseconds) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
@@ -38,6 +44,7 @@ void clear() {
 #else
 #define OS_ "Unknown"
 
+#define DP "/" // hopefilly this will work? idk
 
 void tsleep(int milliseconds) {
 	// Heh, hello mac/BSD/wtf users
@@ -145,6 +152,7 @@ namespace Global {
 	Question current;
 	std::vector<Question> questions;
 	int text_speed = 0;
+	std::stack<std::filesystem::path> current_path;
 }
 
 std::string getInput() {
@@ -189,64 +197,6 @@ std::string checkVar(std::string str) {
 		return "$" + str;
 	}
 	return str;
-}
-
-std::map<std::string,std::string> fromSaveFile(std::string file) {
-	auto lines = intoLines(read(file));
-	for(auto l : lines) {
-		std::cout << "l:" << l << "\n";
-	}
-	std::map<std::string,std::string> ret;
-	for(auto i : lines) {
-		auto tokens = splitBySpaces(i,true,false);
-		
-		for(auto j : tokens) {
-			std::cout << "i:" << i << "\n";
-		}
-
-		if(tokens.size() == 0) {
-			continue;
-		}
-
-		if(tokens.size() < 2) {
-			std::cout << "Error, corrupted save file \"" << file << "\" was tried to be loaded!\n";
-			std::exit(0);
-		}
-		
-
-		std::string val;
-
-		for(size_t j = 1; j < tokens.size(); ++j) {
-			val += tokens[j];
-		}
-		ret[tokens[0]] = val;
-	}
-
-	return ret;
-} 
-
-void mapToSaveFile(std::string file, std::map<std::string,std::string> map) {
-	std::fstream fs;
-	fs.open(file,std::ios::trunc | std::ios::binary | std::ios::app | std::ios::ate);
-	std::string val;
-	for(auto i : map) {
-		val += i.first + " " + i.second + "\n";
-	}
-	std::cout << "\"" << val << "\"\n";
-	fs << val;
-	std::cout << "->\"" << read(file) << "\"\n";
-	fs.close();
-}
-
-void intoSaveFile(std::string file, std::string key, std::string value) {
-	auto map = fromSaveFile(file);
-
-	map[key] = value;
-	std::cout << "map:\n";
-	for(auto i : map) {
-		std::cout << "map[" << i.first << "] = " << i.second << "\n";
-	}
-	mapToSaveFile(file,map);
 }
 
 Question& find(std::string name) {
@@ -618,10 +568,11 @@ bool handleSystemCommand(std::string str, size_t line) {
 
 // std::vector<Question> questions; <- moved to Global namespace!
 
-std::vector<Question> parse(std::string fileName) {
+std::vector<Question> parse(std::string fileName, std::filesystem::path ph) {
+	Global::current_path.push(ph);
 	std::vector<Question> ret;
 	bool inQuestion = false;
-    std::string source = read(fileName);
+    std::string source = read(ph.string() + DP + fileName);
 	source += "\n"; //savety
 	auto vec = intoLines(source);
 	Question qes;
@@ -695,7 +646,7 @@ std::vector<Question> parse(std::string fileName) {
 			vec[i] = rm_begin_end_spaces(vec[i]);
 			std::string file = vec[i];
 			file.erase(file.begin());
-			if(!std::filesystem::exists(file)) {
+			if(!std::filesystem::exists(Global::current_path.top().string() + file)) {
 				std::cout << "Error, unknown file \"" << file << "\" to include in line " << i << "\n";
 				std::exit(0);
 			}
@@ -706,7 +657,7 @@ std::vector<Question> parse(std::string fileName) {
 			qes.clear();
 			inQuestion = false;
 
-			auto add = parse(file);
+			auto add = parse(file,Global::current_path.top());
 			for(auto i : add) {
 				ret.push_back(i);
 			}
@@ -725,7 +676,7 @@ std::vector<Question> parse(std::string fileName) {
 			ret.push_back(qes);
 		}
 	}
-
+	Global::current_path.pop();
 	return ret;
 	
 }
@@ -784,6 +735,7 @@ void run() {
 		Global::vars["__PATH__"] = std::filesystem::current_path().string();
 		Global::vars["__ROOT__"] = std::filesystem::current_path().root_directory();
 		Global::vars["__OS__"] = OS_;
+		// Global::vars["__LAST__"] <- will be set before jumping
 
 		auto split = intoLines(Global::current.text);
 		bool cont = false;
@@ -819,6 +771,7 @@ void run() {
 		}
 
 		if(Global::current.jumpAfterExecute) {
+			Global::vars["__LAST__"] = Global::current.name;
 			Global::current = find(checkVar(Global::current.jumpTo));
 			continue;
 		}
@@ -844,6 +797,7 @@ void run() {
 			// something was here but I forgot, eh
 		}
 		else {
+			Global::vars["__LAST__"] = Global::current.name;
 			Global::current = find(checkVar(Global::current.answers[std::stoi(inp)-1].jumpTo));
 		}
 	}
@@ -854,6 +808,10 @@ int main(int argc, char** argv) {
 		std::cout << "A file must be given!\n";
 		return 1;
 	}
-	Global::questions = parse(std::string(argv[1]));
+
+	std::string path = std::filesystem::current_path().string() + DP + std::filesystem::path(std::string(argv[1])).remove_filename().string();
+	std::string file = std::filesystem::path(std::string(argv[1])).filename();
+	Global::questions = parse(file,path);
+	
 	run();
 }

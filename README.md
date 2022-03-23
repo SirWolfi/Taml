@@ -244,23 +244,7 @@ You can include other adventures like this:
 ```
 This ends the last question! <br>
 <br>
-Be careful: this takes always the path relative to the interpreter run location! <br>
-So when you have a file structure like this:
-```
-Home
-| - including
-    |- a.taml
-    |- b.taml
-```
-When you run `a.taml` in the `Home` folder, you must include it like this:
-```
-%including/b.taml
-```
-When you are in the `including` folder, it has to look like this:
-```
-%b.taml
-```
-It is recomended to always run one folder above all seperat files! (In this example in `Home`)
+Including is the same as copy and pasting it into the current file at the instructions position. 
 
 ## Style Guide
 You can do whatever you want, but here are some suggestions: <br>
@@ -354,10 +338,7 @@ It should look something like this:
 
 To prevent double definitions of questions, use prefixes like `project::question-name` when you make an adventure for others to build upon. <br>
 You don't need that in your own projects, but it's not bad to have.
-<br> <br>
-It's possible but bad practise to let two files use each others questions. <br>
-The better way is to have one main file and other tool files. <br>
-_Node: this could lead to unexpected behavior_
+<br>
 
 ## Examples
 

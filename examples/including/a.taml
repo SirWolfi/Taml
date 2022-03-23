@@ -4,7 +4,7 @@ This is file A!
 {<>} A::QUESTION_1
 
 # include
-%examples/including/b.taml
+%b.taml
 
 [A::QUESTION_1]
 Called A!
