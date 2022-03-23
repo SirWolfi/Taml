@@ -210,7 +210,7 @@ The root directory. <br>
 On Windows, this might be `C:` or `D:` <br>
 On Linux and other Unix-like systems this will probably be `/`
 
-#### `__OS__`11
+#### `__OS__`
 The operating system you are using. <br>
 Either `Windows`, `Linux`, or `Unknwon` (Sorry macOS-user)
 
