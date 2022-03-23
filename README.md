@@ -190,27 +190,27 @@ If it doesn't exist, `VARIABLE` is an empty string.
 Interpreter variables are variables which will be set new for each line interpetered. <br>
 They can be used as normal variables, but setting them has no effect.
 
-#### __TEXT_SPEED__
+#### `__TEXT_SPEED__`
 The current text speed.
 
-#### __QUESTION__
+#### `__QUESTION__`
 The name of the current question the interpreter is in.
 
-#### __QUESTIONS__
+#### `__QUESTIONS__
 The number of total questions.
 
-#### __START__
+#### `__START__`
 The first Question at which the interpeter began.
 
-#### __PATH__
+#### `__PATH__`
 The path to the executeable.
 
-#### __ROOT__
+#### `__ROOT__`
 The root directory. <br>
 On Windows, this might be `C:` or `D:` <br>
 On Linux and other Unix-like systems this will probably be `/`
 
-#### __OS__
+#### `__OS__`11
 The operating system you are using. <br>
 Either `Windows`, `Linux`, or `Unknwon` (Sorry macOS-user)
 
