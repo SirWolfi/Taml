@@ -46,12 +46,14 @@ This is the text of Question2
 ```
 <br>
 Every question has some possible answers. You can declare them like this:
+
 ```
 [Question]
 Text
 {Answer1} Question2
 {Answer2} Question3
 ```
+
 When the user chooses `Answer1`, the interpreter jumps to `Question2` <br>
 When the user chooses `Answer2`, the interpreter jumps to `Question3` <br>
 
