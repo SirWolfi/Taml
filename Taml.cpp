@@ -44,7 +44,7 @@ void clear() {
 #else
 #define OS_ "Unknown"
 
-#define DP "/" // hopefilly this will work? idk
+#define DP "/" // hopefully this will work? idk
 
 void tsleep(int milliseconds) {
 	// Heh, hello mac/BSD/wtf users
